@@ -4,7 +4,9 @@ import {
     getProduct,
     addProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    updateProducts,
+    removeProducts
 } from '../handlers/product.js';
 import { validateInputProduct } from '../middleware/productMiddleware.js';
 import { getAll } from "../database/repositories/product.js";
@@ -24,6 +26,8 @@ router.get("/products", getProducts);
 router.get("/product/:id", getProduct);
 router.post("/products", validateInputProduct, addProduct);
 router.put("/product/:id", validateInputProduct, updateProduct);
+router.put("/products", updateProducts);
 router.delete("/product/:id", deleteProduct);
+router.post("/products/d", removeProducts);
 
 export default router;

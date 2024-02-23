@@ -3,7 +3,9 @@ import {
     getOne,
     add,
     update,
-    remove
+    remove,
+    updates,
+    removes
 } from "../database/repositories/product.js";
 
 export async function getProducts(ctx) {
@@ -108,3 +110,41 @@ export async function deleteProduct(ctx) {
     }
 }
 
+export async function updateProducts(ctx) {
+    try {
+        const products = ctx.request.body;
+
+        updates(products);
+
+        ctx.status = 200;
+        return ctx.body = {
+            success: true
+        }
+    } catch (err) {
+        ctx.status = 404;
+        ctx.body = {
+            success: false,
+            data: [],
+            error: err.message
+        };
+    }
+}
+
+export async function removeProducts(ctx) {
+    try {
+        const { ids } = ctx.request.body;
+        removes(ids);
+
+        ctx.status = 200;
+        return ctx.body = {
+            success: true
+        }
+    } catch (err) {
+        ctx.status = 404;
+        ctx.body = {
+            success: false,
+            data: [],
+            error: err.message
+        };
+    }
+}
