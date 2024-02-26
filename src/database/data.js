@@ -2,29 +2,29 @@ import { faker } from "@faker-js/faker";
 import fs from "fs";
 
 export function createRandomProduct() {
-    return {
-        // id: faker.number.int({ min: 1, max: 10 }),
-        // name: faker.commerce.productName(),
-        // price: faker.commerce.price(),
-        // description: faker.commerce.productDescription(),
-        // product: faker.commerce.productMaterial(),
-        // color: faker.color.human(),
-        // createdAt: new Date(faker.date.recent()),
-        // image: faker.image.url()
+  return {
+    // id: faker.number.int({ min: 1, max: 10 }),
+    // name: faker.commerce.productName(),
+    // price: faker.commerce.price(),
+    // description: faker.commerce.productDescription(),
+    // product: faker.commerce.productMaterial(),
+    // color: faker.color.human(),
+    // createdAt: new Date(faker.date.recent()),
+    // image: faker.image.url()
 
-        id: faker.number.int({ min: 1, max: 20 }),
-        text: faker.hacker.verb(),
-        isCompleted: false
-    };
+    id: faker.number.int({ min: 1, max: 20 }),
+    text: faker.hacker.verb(),
+    isCompleted: false
+  };
 };
 
 export function generateData() {
-    const products = faker.helpers.multiple(createRandomProduct, {
-        count: 5,
-    });
+  const products = faker.helpers.multiple(createRandomProduct, {
+    count: 5,
+  });
 
-    return fs.writeFileSync("./products.json", JSON.stringify({
-        data: products
-    }));
+  return fs.writeFileSync("./products.json", JSON.stringify({
+    data: products
+  }));
 };
 generateData();

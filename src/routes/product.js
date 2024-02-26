@@ -1,25 +1,25 @@
 import Router from "koa-router";
 import {
-    getProducts,
-    getProduct,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    updateProducts,
-    removeProducts
+  getProducts,
+  getProduct,
+  addProduct,
+  updateProduct,
+  deleteProduct,
+  updateProducts,
+  removeProducts
 } from '../handlers/product.js';
 import { validateInputProduct } from '../middleware/productMiddleware.js';
 import { getAll } from "../database/repositories/product.js";
 
 const router = new Router({
-    prefix: "/api"
+  prefix: "/api"
 });
 
 router.get("/test", async (ctx) => {
-    const products = getAll();
-    await ctx.render("product", {
-        products
-    });
+  const products = getAll();
+  await ctx.render("product", {
+    products
+  });
 });
 
 router.get("/products", getProducts);

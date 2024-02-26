@@ -15,11 +15,11 @@ app.use(router.routes());
 app.use(router.allowedMethods());
 
 render(app, {
-    root: "./src/view",
-    layout: 'template',
-    viewExt: 'html',
-    cache: false,
-    debug: true
+  root: "./src/view",
+  layout: 'template',
+  viewExt: 'html',
+  cache: false,
+  debug: true
 })
 
 app.listen(5000);
