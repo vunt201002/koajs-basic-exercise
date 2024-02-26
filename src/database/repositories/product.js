@@ -13,7 +13,7 @@ function pick(object, keys) {
 }
 
 export function getAll({ limit, sort }) {
-    let cProducts = products;
+    let cProducts = [...products];
     // sort first
     if (sort) {
         if (sort === 'desc') {
