@@ -1,45 +1,55 @@
 import fs from 'fs';
 import { faker } from "@faker-js/faker";
 import { pick } from "../../helpers/helperFunc.js";
+import { initializeApp, applicationDefault, cert } from "firebase-admin/app";
+import { getFirestore, Timestamp, FieldValue, Filter } from "firebase-admin/firestore";
+import serviceAccount from "../../../serviceAccount.json"  assert {type: 'json'};
 
-const { data: products } = JSON.parse(fs.readFileSync("./src/database/products.json"));
+initializeApp({
+  credential: cert(serviceAccount)
+});
 
+const db = getFirestore();
 
+export async function getAll({ limit, sort }) {
+  let todosRef = db.collection('todo');
 
-export function getAll({ limit, sort }) {
-  let cProducts = [...products];
-  // sort first
-  if (sort) {
-    if (sort === 'desc') {
-      cProducts.sort((a, b) => new Date(b.id) - new Date(a.id));
-    } else if (sort === 'asc') {
-      cProducts.sort((a, b) => new Date(a.id) - new Date(b.id));
-    }
+  if(sort && (sort.toLowerCase() === "asc" || sort.toLowerCase() === "desc")) {
+    todosRef = todosRef.orderBy("createdAt", sort.toLowerCase());
   }
 
-  if (limit) {
-    const limitNum = parseInt(limit);
-    if (!isNaN(limitNum)) {
-      cProducts = cProducts.slice(0, limitNum);
-    }
+  if (!isNaN(parseInt(limit))) {
+    todosRef = todosRef.limit(parseInt(limit));
   }
 
-  return cProducts;
+  const snapshot = await todosRef.get();
+  const todos = [];
+
+  snapshot.forEach(doc => {
+    todos.push(doc.data());
+  });
+
+  return todos;
 }
 
-export function getOne({ id, fields }) {
-  let product = products.find(product => product.id === parseInt(id));
+export async function getOne({ id, fields }) {
+  const todoRef = db.collection('todo');
+  const snapshot = await todoRef.where('id', '==', parseInt(id)).get();
+  if (snapshot.empty) {
+    console.log('No matching documents.');
+    return;
+  }
 
+  let product
+
+  snapshot.forEach(doc => {
+    product = {...doc.data()};
+  });
+  
   if (fields) {
     const selectedFields = fields.split(',');
 
     const filteredProduct = pick(product, selectedFields)
-
-    // selectedFields.map(field => {
-    //     if (product.hasOwnProperty(field)) {
-    //         filteredProduct[field] = product[field];
-    //     }
-    // });
 
     product = filteredProduct;
   }
@@ -47,60 +57,51 @@ export function getOne({ id, fields }) {
   return product;
 }
 
-export function add(text) {
+export async function add(text) {
   const product = {
     text,
-    id: faker.number.int({ min: 1, max: 20 }),
-    isCompleted: false
+    id: faker.number.int({ min: 1, max: 100 }),
+    isCompleted: false,
+    createdAt: Timestamp.fromDate(new Date())
   }
-  const updateProducts = [product, ...products];
-
-  return fs.writeFileSync("./src/database/products.json", JSON.stringify({
-    data: updateProducts
-  }));
+  
+  const res = await db.collection("todo").doc(`${product.id}`).set(product);
+  console.log(res); 
 }
 
-export function update(product, id) {
-  let updateProducts = products.map(p => {
-    if (p.id === parseInt(id)) {
-      return product;
-    } else {
-      return p;
-    }
+export async function update(product, id) {
+  const updateTodo = await getOne({ id });
+  console.log(updateTodo);
+  const res = await db.collection("todo").doc(`${updateTodo.id}`).set(product);
+
+  return;
+}
+
+export async function remove(id) {
+  const deleteTodo = await getOne({ id });
+
+  const res = await db.collection("todo").doc(`${deleteTodo.id}`).delete();
+
+  return;
+}
+
+export async function removes(ids) {
+  const todoRef = db.collection("todo");
+  const snapshot = await todoRef.where("id", "in", ids).get();
+
+  let deleteTodo = [];
+
+  snapshot.forEach(doc => {
+    deleteTodo.push(doc.data());
   });
 
-  return fs.writeFileSync("./src/database/products.json", JSON.stringify({
-    data: updateProducts
-  }));
+  deleteTodo.forEach(async d => {
+    await remove(d.id);
+  })
 }
 
-export function remove(id) {
-  const deletedProducts = products.filter(product => product.id !== parseInt(id));
-
-  return fs.writeFileSync("./src/database/products.json", JSON.stringify({
-    data: deletedProducts
-  }));
-}
-
-export function removes(ids) {
-  const deletedProducts = products.filter(product => !ids.includes(product.id));
-  console.log(ids);
-
-  return fs.writeFileSync("./src/database/products.json", JSON.stringify({
-    data: deletedProducts
-  }));
-}
-
-export function updates(productsToUpdate) {
-  const updatedProducts = products.map(product => {
-    const updatedProduct = productsToUpdate.find(p => p.id === product.id);
-    if (updatedProduct) {
-      return updatedProduct;
-    }
-    return product;
-  });
-
-  return fs.writeFileSync("./src/database/products.json", JSON.stringify({
-    data: updatedProducts
-  }));
+export async function updates(productsToUpdate) {
+  productsToUpdate.data.forEach(async p => {
+    await update(p, p.id);
+  })
 }

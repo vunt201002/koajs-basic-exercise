@@ -11,8 +11,8 @@ import {
 export async function getProducts(ctx) {
   try {
     const { limit, sort } = ctx.query;
-    const products = getAll({ limit, sort });
-
+    const products = await getAll({ limit, sort });
+    
     ctx.body = {
       data: products
     }
@@ -31,8 +31,8 @@ export async function getProduct(ctx) {
     const { id } = ctx.params;
     const { fields } = ctx.query;
 
-    const product = getOne({ id, fields });
-
+    const product = await getOne({ id, fields });
+    
     if (product) {
       return ctx.body = {
         data: product
@@ -52,9 +52,6 @@ export async function getProduct(ctx) {
 
 export async function addProduct(ctx) {
   try {
-    // const product = ctx.request.body;
-    // product.createdAt = new Date();
-
     const { text } = ctx.request.body;
     add(text);
 
