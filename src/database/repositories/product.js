@@ -1,8 +1,6 @@
-import fs from 'fs';
-import { faker } from "@faker-js/faker";
 import { pick } from "../../helpers/helperFunc.js";
-import { initializeApp, applicationDefault, cert } from "firebase-admin/app";
-import { getFirestore, Timestamp, FieldValue, Filter } from "firebase-admin/firestore";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getFirestore, Timestamp, FieldPath } from "firebase-admin/firestore";
 import serviceAccount from "../../../serviceAccount.json"  assert {type: 'json'};
 
 initializeApp({
@@ -10,98 +8,97 @@ initializeApp({
 });
 
 const db = getFirestore();
+const todoRef = db.collection('todo');
 
 export async function getAll({ limit, sort }) {
-  let todosRef = db.collection('todo');
+  let t = db.collection("todo");
 
   if(sort && (sort.toLowerCase() === "asc" || sort.toLowerCase() === "desc")) {
-    todosRef = todosRef.orderBy("createdAt", sort.toLowerCase());
+    t = todoRef.orderBy("createdAt", sort.toLowerCase());
   }
 
   if (!isNaN(parseInt(limit))) {
-    todosRef = todosRef.limit(parseInt(limit));
+    t = sortTodoRef.limit(parseInt(limit));
   }
 
-  const snapshot = await todosRef.get();
-  const todos = [];
+  const snapshot = await t.get();
 
-  snapshot.forEach(doc => {
-    todos.push(doc.data());
-  });
-
-  return todos;
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
 }
 
 export async function getOne({ id, fields }) {
-  const todoRef = db.collection('todo');
-  const snapshot = await todoRef.where('id', '==', parseInt(id)).get();
-  if (snapshot.empty) {
+  const snapshot = await todoRef.doc(id).get();
+  let todo;
+  if (!snapshot.exists) {
     console.log('No matching documents.');
     return;
+  } else {
+    todo = snapshot.data();
   }
-
-  let product
-
-  snapshot.forEach(doc => {
-    product = {...doc.data()};
-  });
   
   if (fields) {
     const selectedFields = fields.split(',');
 
-    const filteredProduct = pick(product, selectedFields)
+    const filteredProduct = pick(todo, selectedFields)
 
-    product = filteredProduct;
+    todo = filteredProduct;
   }
 
-  return product;
+  return todo;
 }
 
 export async function add(text) {
-  const product = {
+  const todo = {
     text,
-    id: faker.number.int({ min: 1, max: 100 }),
     isCompleted: false,
     createdAt: Timestamp.fromDate(new Date())
   }
-  
-  const res = await db.collection("todo").doc(`${product.id}`).set(product);
+
+  const res = await todoRef.add(todo);
   console.log(res); 
 }
 
-export async function update(product, id) {
-  const updateTodo = await getOne({ id });
-  console.log(updateTodo);
-  const res = await db.collection("todo").doc(`${updateTodo.id}`).set(product);
-
-  return;
+export async function complete(id) {
+  const res = await todoRef.doc(id).update({ isCompleted: true });
+  console.log(res);
 }
 
 export async function remove(id) {
-  const deleteTodo = await getOne({ id });
-
-  const res = await db.collection("todo").doc(`${deleteTodo.id}`).delete();
-
-  return;
+  const res = await todoRef.doc(id).delete();
+  console.log(res);
 }
 
 export async function removes(ids) {
-  const todoRef = db.collection("todo");
-  const snapshot = await todoRef.where("id", "in", ids).get();
+  const snapshot = await todoRef.where(FieldPath.documentId(), "in", ids).get();
 
   let deleteTodo = [];
 
-  snapshot.forEach(doc => {
-    deleteTodo.push(doc.data());
-  });
+  deleteTodo = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
 
-  deleteTodo.forEach(async d => {
-    await remove(d.id);
-  })
+  return Promise.all(
+    deleteTodo.map(async d => {
+      return remove(d.id);
+    })
+  );
 }
 
-export async function updates(productsToUpdate) {
-  productsToUpdate.data.forEach(async p => {
-    await update(p, p.id);
-  })
+export async function updates(ids) {
+  const snapshot = await todoRef.where(FieldPath.documentId(), "in", ids).get();
+
+  const updatedTodo = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+
+  return Promise.all(
+    updatedTodo.map(async p => {
+      return complete(p.id);
+    })
+  );
 }

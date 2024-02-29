@@ -2,7 +2,7 @@ import {
   getAll,
   getOne,
   add,
-  update,
+  complete,
   remove,
   updates,
   removes
@@ -73,7 +73,7 @@ export async function updateProduct(ctx) {
   try {
     const { id } = ctx.params;
 
-    update(ctx.request.body, id);
+    complete(id);
 
     ctx.status = 200;
     return ctx.body = {
@@ -109,9 +109,9 @@ export async function deleteProduct(ctx) {
 
 export async function updateProducts(ctx) {
   try {
-    const products = ctx.request.body;
-
-    updates(products);
+    const { ids } = ctx.request.body;
+    
+    updates(ids);
 
     ctx.status = 200;
     return ctx.body = {

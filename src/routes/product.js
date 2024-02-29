@@ -25,7 +25,7 @@ router.get("/test", async (ctx) => {
 router.get("/products", getProducts);
 router.get("/product/:id", getProduct);
 router.post("/products", validateInputProduct, addProduct);
-router.put("/product/:id", validateInputProduct, updateProduct);
+router.put("/product/:id", updateProduct);
 router.put("/products", updateProducts);
 router.delete("/product/:id", deleteProduct);
 router.post("/products/d", removeProducts);
