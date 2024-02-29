@@ -72,33 +72,17 @@ export async function remove(id) {
 }
 
 export async function removes(ids) {
-  const snapshot = await todoRef.where(FieldPath.documentId(), "in", ids).get();
-
-  let deleteTodo = [];
-
-  deleteTodo = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
-
   return Promise.all(
-    deleteTodo.map(async d => {
-      return remove(d.id);
+    ids.map(async id => {
+      return await remove(id);
     })
   );
 }
 
 export async function updates(ids) {
-  const snapshot = await todoRef.where(FieldPath.documentId(), "in", ids).get();
-
-  const updatedTodo = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
-
   return Promise.all(
-    updatedTodo.map(async p => {
-      return complete(p.id);
+    ids.map(async id => {
+      return await complete(id);
     })
   );
 }
